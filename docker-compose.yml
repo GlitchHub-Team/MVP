@@ -1,0 +1,107 @@
+services:
+    frontend:
+        build:
+            context: ./Dashboard/frontend/frontend 
+            dockerfile: Dockerfile
+        env_file:
+            - .env
+        working_dir: /app
+        ports:
+            - "80:80"
+        restart: always
+        depends_on:
+            backend:
+                condition: service_started
+
+    backend:
+        image: golang:1.26-bookworm
+        env_file:
+            - ./Infrastructure/.env
+            - .env
+        volumes:
+            - ./Dashboard/backend:/app
+            - go_pkg_cache:/go/pkg
+        working_dir: /app
+        environment:
+            DASHBOARD_CREDS_PATH: dashboard.creds
+            TEST_CREDS_PATH: admin_test.creds
+            CA_PEM_PATH: ca.pem
+        command: sh -c "go mod download && go build -o backend main.go && ./backend"
+        depends_on:
+            timescale: 
+                condition: service_healthy
+            cloud-db: 
+                condition: service_healthy
+            nats:
+                condition: service_started
+
+    gateway:
+        image: golang:1.26-bookworm
+        volumes:
+            - ./Gateway:/app
+            - go_pkg_cache:/go/pkg
+        working_dir: /app
+        env_file:
+            - ./Infrastructure/.env
+        environment:
+            TEST_CREDS_PATH: admin_test.creds
+            GATEWAY_BASE_CREDS_PATH: base.creds
+            CA_PEM_PATH: ca.pem
+        command: sh -c "go mod download && cd cmd && go build -o gateway && ./gateway"
+        depends_on:
+            timescale:
+                condition: service_healthy
+            nats: 
+                condition: service_started
+
+    dataconsumer:
+        image: golang:1.26-bookworm
+        volumes:
+            - ./DataConsumer:/app
+            - go_pkg_cache:/go/pkg
+        working_dir: /app
+        env_file:
+            - ./Infrastructure/.env
+        environment:
+            DATA_CONSUMER_CREDS_PATH: data_consumer.creds
+            DATA_CONSUMER_TEST_CREDS_PATH: admin_test.creds
+            DATA_CONSUMER_CA_PEM_PATH: ca.pem
+        command: sh -c "go mod download && cd cmd && go build -o dataconsumer && ./dataconsumer"
+        depends_on:
+            timescale:
+                condition: service_healthy
+            nats:
+                condition: service_started
+
+    prometheus:
+        image: prom/prometheus:v3.10.0
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./Observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+        depends_on:
+            - nats
+            - nats-exporter
+
+    grafana:
+        image: grafana/grafana:12.4.1
+        ports:
+            - "3000:3000"
+        environment:
+            - GF_SECURITY_ADMIN_USER=admin
+            - GF_SECURITY_ADMIN_PASSWORD=admin
+            - GF_USERS_ALLOW_SIGN_UP=false
+        volumes:
+            - ./Observability/grafana/provisioning:/etc/grafana/provisioning:ro
+            - ./Observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
+        depends_on:
+            - prometheus
+
+include:
+  - path: ./Infrastructure/docker-compose.yml
+
+volumes:
+  frontend_node_modules:
+  go_pkg_cache:

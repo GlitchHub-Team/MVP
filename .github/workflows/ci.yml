@@ -1,0 +1,167 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: self-hosted
+    env:
+      NATS_HOST: ${{ vars.NATS_HOST }}
+      NATS_PORT: ${{ vars.NATS_PORT }}
+      NATS_HTTP_PORT: ${{ vars.NATS_HTTP_PORT }}
+      NATS_ENCRYPTION_KEY: ${{ secrets.NATS_ENCRYPTION_KEY }}
+      NATS_SYS_ACCOUNT_ID: ${{ vars.NATS_SYS_ACCOUNT_ID }}
+      NATS_APPLICATION_CORE_ID: ${{ vars.NATS_APPLICATION_CORE_ID }}
+      POSTGRES_HOST: ${{ vars.POSTGRES_HOST }}
+      POSTGRES_PORT: ${{ vars.POSTGRES_PORT }}
+      POSTGRES_DB: ${{ vars.POSTGRES_DB }}
+      POSTGRES_USER: ${{ secrets.POSTGRES_USER }}
+      POSTGRES_PASSWORD: ${{ secrets.POSTGRES_PASSWORD }}
+      CLOUD_POSTGRES_HOST: ${{ vars.CLOUD_POSTGRES_HOST }}
+      CLOUD_POSTGRES_PORT: ${{ vars.CLOUD_POSTGRES_PORT }}
+      CLOUD_POSTGRES_DB: ${{ vars.CLOUD_POSTGRES_DB }}
+      CLOUD_POSTGRES_USER: ${{ secrets.CLOUD_POSTGRES_USER }}
+      CLOUD_POSTGRES_PASSWORD: ${{ secrets.CLOUD_POSTGRES_PASSWORD }}
+      GATEWAY_BASE_CREDS_PATH: base.creds
+      TEST_CREDS_PATH: admin_test.creds
+      CA_PEM_PATH: ca.pem
+      PORT: ${{ vars.PORT }}
+      MAIL_ADAPTER: ${{ vars.MAIL_ADAPTER }}
+      TOKEN_LENGTH: ${{ vars.TOKEN_LENGTH }}
+      TOKEN_DURATION: ${{ vars.TOKEN_DURATION }}
+      BCRYPT_COST: ${{ vars.BCRYPT_COST }}
+      AUTH_TOKEN_DURATION: ${{ vars.AUTH_TOKEN_DURATION }}
+      AUTH_TOKEN_SECRET: ${{ secrets.AUTH_TOKEN_SECRET }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Init Infrastructure
+        uses: GlitchHub-Team/Infrastructure/.github/actions/init@main
+        with:
+          NATS_STREAM_SETUPPER_CREDS: ${{ secrets.NATS_STREAM_SETUPPER_CREDS }}
+          NATS_SERVER_TLS_KEY: ${{ secrets.NATS_SERVER_TLS_KEY }}
+          GATEWAY1_CREDS: ${{ secrets.GATEWAY1_CREDS }}
+          GATEWAY2_CREDS: ${{ secrets.GATEWAY2_CREDS }}
+
+      - name: Checkout Dashboard
+        uses: actions/checkout@v4
+        with:
+          repository: GlitchHub-Team/Dashboard
+          path: Dashboard
+
+      - name: Checkout DataConsumer
+        uses: actions/checkout@v4
+        with:
+          repository: GlitchHub-Team/DataConsumer
+          path: DataConsumer
+
+      - name: Checkout Gateway
+        uses: actions/checkout@v4
+        with:
+          repository: GlitchHub-Team/Gateway
+          path: Gateway
+      
+      - name: Checkout Observability
+        uses: actions/checkout@v4
+        with:
+          repository: GlitchHub-Team/Observability
+          path: Observability
+
+      - name: Init integration credentials
+        shell: bash
+        env:
+          GATEWAY_BASE_CREDS: ${{ secrets.GATEWAY_BASE_CREDS }}
+          TEST_CREDS: ${{ secrets.TEST_CREDS }}
+          DATA_CONSUMER_CREDS: ${{ secrets.DATA_CONSUMER_CREDS }}
+          DASHBOARD_CREDS: ${{ secrets.DASHBOARD_CREDS }}
+        run: |
+          set -euo pipefail
+          bash .github/scripts/init-integration-secrets.sh
+
+      - name: Start all containers
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml up -d --build
+
+      - name: Verify all containers are ready
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          COMPOSE_FILE="docker-compose.yml"
+          TIMEOUT=240
+          INTERVAL=5
+          ELAPSED=0
+          SERVICES="$(docker compose -f "$COMPOSE_FILE" config --services)"
+
+          while true; do
+            ALL_READY=true
+
+            for SERVICE in $SERVICES; do
+              CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps -q "$SERVICE")"
+
+              if [ -z "$CONTAINER_ID" ]; then
+                echo "[PENDING] $SERVICE has no container id yet"
+                ALL_READY=false
+                continue
+              fi
+
+              STATUS="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_ID")"
+              HEALTH="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$CONTAINER_ID")"
+
+              echo "$SERVICE -> status=$STATUS health=$HEALTH"
+
+              if [ "$STATUS" != "running" ]; then
+                ALL_READY=false
+              fi
+
+              if [ "$HEALTH" = "unhealthy" ]; then
+                echo "::error::Service $SERVICE is unhealthy"
+                docker logs "$CONTAINER_ID" --tail 120 || true
+                exit 1
+              fi
+
+              if [ "$HEALTH" = "starting" ]; then
+                ALL_READY=false
+              fi
+            done
+
+            if [ "$ALL_READY" = true ]; then
+              echo "All containers are running and healthy."
+              break
+            fi
+
+            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+              echo "::error::Timeout while waiting for all containers to become ready"
+              docker compose -f "$COMPOSE_FILE" ps || true
+              docker compose -f "$COMPOSE_FILE" logs --tail 120 || true
+              exit 1
+            fi
+
+            sleep "$INTERVAL"
+            ELAPSED=$((ELAPSED + INTERVAL))
+          done
+
+      - name: Stop all containers
+        if: always()
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml down -v --remove-orphans
+
+
+
+      
+
+      
+
+      
