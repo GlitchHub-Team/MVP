@@ -4,7 +4,8 @@ services:
             context: ./Dashboard/frontend/frontend 
             dockerfile: Dockerfile
         env_file:
-            - .env
+            - path: .env
+              required: false
         working_dir: /app
         ports:
             - "80:80"
@@ -16,8 +17,10 @@ services:
     backend:
         image: golang:1.26-bookworm
         env_file:
-            - ./Infrastructure/.env
-            - .env
+            - path: ./Infrastructure/.env
+              required: false
+            - path: .env
+              required: false
         volumes:
             - ./Dashboard/backend:/app
             - go_pkg_cache:/go/pkg
@@ -42,7 +45,8 @@ services:
             - go_pkg_cache:/go/pkg
         working_dir: /app
         env_file:
-            - ./Infrastructure/.env
+            - path: ./Infrastructure/.env
+              required: false
         environment:
             TEST_CREDS_PATH: admin_test.creds
             GATEWAY_BASE_CREDS_PATH: base.creds
@@ -61,7 +65,8 @@ services:
             - go_pkg_cache:/go/pkg
         working_dir: /app
         env_file:
-            - ./Infrastructure/.env
+            - path: ./Infrastructure/.env
+              required: false
         environment:
             DATA_CONSUMER_CREDS_PATH: data_consumer.creds
             DATA_CONSUMER_TEST_CREDS_PATH: admin_test.creds

@@ -4,6 +4,13 @@ on:
   push:
     branches:
       - main
+  repository_dispatch:
+    types:
+      - dashboard-main-push
+      - dataconsumer-main-push
+      - gateway-main-push
+      - observability-main-push
+      - infrastructure-main-push
 
 permissions:
   contents: read
