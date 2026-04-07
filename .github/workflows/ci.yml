@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   validate:
-    runs-on: self-hosted
+    group: not-exposed
     env:
       NATS_HOST: ${{ vars.NATS_HOST }}
       NATS_PORT: ${{ vars.NATS_PORT }}
