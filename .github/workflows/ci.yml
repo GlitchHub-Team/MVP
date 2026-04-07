@@ -46,6 +46,9 @@ jobs:
       BCRYPT_COST: ${{ vars.BCRYPT_COST }}
       AUTH_TOKEN_DURATION: ${{ vars.AUTH_TOKEN_DURATION }}
       AUTH_TOKEN_SECRET: ${{ secrets.AUTH_TOKEN_SECRET }}
+      GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
+      GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
+      GF_USERS_ALLOW_SIGN_UP: ${{ vars.GF_USERS_ALLOW_SIGN_UP }}
 
     steps:
       - name: Checkout

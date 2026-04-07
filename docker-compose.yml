@@ -78,32 +78,6 @@ services:
             nats:
                 condition: service_started
 
-    prometheus:
-        image: prom/prometheus:v3.10.0
-        ports:
-            - "9090:9090"
-        volumes:
-            - ./Observability/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-        command:
-            - "--config.file=/etc/prometheus/prometheus.yml"
-        depends_on:
-            - nats
-            - nats-exporter
-
-    grafana:
-        image: grafana/grafana:12.4.1
-        ports:
-            - "3000:3000"
-        environment:
-            - GF_SECURITY_ADMIN_USER=admin
-            - GF_SECURITY_ADMIN_PASSWORD=admin
-            - GF_USERS_ALLOW_SIGN_UP=false
-        volumes:
-            - ./Observability/grafana/provisioning:/etc/grafana/provisioning:ro
-            - ./Observability/grafana/dashboards:/var/lib/grafana/dashboards:ro
-        depends_on:
-            - prometheus
-
 include:
   - path: ./Infrastructure/docker-compose.yml
 
