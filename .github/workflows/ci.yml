@@ -79,12 +79,6 @@ jobs:
         with:
           repository: GlitchHub-Team/Gateway
           path: Gateway
-      
-      - name: Checkout Observability
-        uses: actions/checkout@v4
-        with:
-          repository: GlitchHub-Team/Observability
-          path: Observability
 
       - name: Init integration credentials
         shell: bash
