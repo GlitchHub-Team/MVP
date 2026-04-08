@@ -1,2 +1,6 @@
 .env
 *.creds
+Dashboard
+DataConsumer
+Gateway
+Infrastructure
