@@ -31,7 +31,7 @@ services:
             DASHBOARD_CREDS_PATH: dashboard.creds
             TEST_CREDS_PATH: admin_test.creds
             CA_PEM_PATH: ca.pem
-        command: sh -c "go mod download && go build -o backend main.go && ./backend"
+        command: sh -c "go mod download && go build -buildvcs=false -o backend main.go && ./backend"
         depends_on:
             timescale: 
                 condition: service_healthy
@@ -53,7 +53,7 @@ services:
             TEST_CREDS_PATH: admin_test.creds
             GATEWAY_BASE_CREDS_PATH: base.creds
             CA_PEM_PATH: ca.pem
-        command: sh -c "go mod download && cd cmd && go build -o gateway && ./gateway"
+        command: sh -c "go mod download && cd cmd && go build -buildvcs=false -o gateway && ./gateway"
         depends_on:
             timescale:
                 condition: service_healthy
@@ -73,7 +73,7 @@ services:
             DATA_CONSUMER_CREDS_PATH: data_consumer.creds
             DATA_CONSUMER_TEST_CREDS_PATH: admin_test.creds
             DATA_CONSUMER_CA_PEM_PATH: ca.pem
-        command: sh -c "go mod download && cd cmd && go build -o dataconsumer && ./dataconsumer"
+        command: sh -c "go mod download && cd cmd && go build -buildvcs=false -o dataconsumer && ./dataconsumer"
         depends_on:
             timescale:
                 condition: service_healthy
