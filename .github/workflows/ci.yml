@@ -141,9 +141,10 @@ jobs:
           set -euo pipefail
           docker compose -f docker-compose.yml down -v --remove-orphans
           sudo chown -R $USER:$USER .
-
-
-
+          
+      - name: Show Backend Logs on Failure
+        if: failure()
+        run: docker compose logs backend
       
 
       
