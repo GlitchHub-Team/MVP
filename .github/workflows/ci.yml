@@ -109,7 +109,7 @@ jobs:
           set -euo pipefail
 
           COMPOSE_ARGS=(-f docker-compose.yml)
-          TIMEOUT=300
+          TIMEOUT=600
           INTERVAL=5
           ELAPSED=0
           SERVICES="$(docker compose "${COMPOSE_ARGS[@]}" config --services)"
