@@ -129,7 +129,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.yml run --rm --no-deps --build \
+          docker compose -f docker-compose.yml exec -T \
             -e APP_URL=http://frontend \
             e2e-tests \
             pytest -q tests
