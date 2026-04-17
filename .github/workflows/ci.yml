@@ -103,7 +103,7 @@ jobs:
           set -euo pipefail
 
           COMPOSE_FILE="docker-compose.yml"
-          TIMEOUT=240
+          TIMEOUT=500
           INTERVAL=5
           ELAPSED=0
           SERVICES="$(docker compose -f "$COMPOSE_FILE" config --services)"
@@ -155,6 +155,15 @@ jobs:
             sleep "$INTERVAL"
             ELAPSED=$((ELAPSED + INTERVAL))
           done
+
+      - name: Run Playwright e2e tests
+        shell: bash
+        run: |
+          set -euo pipefail
+          docker compose -f docker-compose.yml exec -T \
+            -e APP_URL=http://frontend \
+            e2e-tests \
+            pytest -q tests
 
       - name: Stop all containers
         if: always()
