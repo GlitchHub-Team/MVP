@@ -123,66 +123,7 @@ jobs:
           fi
 
           docker compose -f docker-compose.yml config > /dev/null
-          docker compose -f docker-compose.yml up -d --build --scale e2e-tests=0
-
-      - name: Verify all containers are ready
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          COMPOSE_ARGS=(-f docker-compose.yml)
-          TIMEOUT=600
-          INTERVAL=5
-          ELAPSED=0
-          SERVICES="$(docker compose "${COMPOSE_ARGS[@]}" config --services)"
-
-          while true; do
-            ALL_READY=true
-
-            for SERVICE in $SERVICES; do
-              CONTAINER_ID="$(docker compose "${COMPOSE_ARGS[@]}" ps -q "$SERVICE")"
-
-              if [ -z "$CONTAINER_ID" ]; then
-                echo "[PENDING] $SERVICE has no container id yet"
-                ALL_READY=false
-                continue
-              fi
-
-              STATUS="$(docker inspect -f '{{.State.Status}}' "$CONTAINER_ID")"
-              HEALTH="$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{else}}none{{end}}' "$CONTAINER_ID")"
-
-              echo "$SERVICE -> status=$STATUS health=$HEALTH"
-
-              if [ "$STATUS" != "running" ]; then
-                ALL_READY=false
-              fi
-
-              if [ "$HEALTH" = "unhealthy" ]; then
-                echo "::error::Service $SERVICE is unhealthy"
-                docker logs "$CONTAINER_ID" --tail 120 || true
-                exit 1
-              fi
-
-              if [ "$HEALTH" = "starting" ]; then
-                ALL_READY=false
-              fi
-            done
-
-            if [ "$ALL_READY" = true ]; then
-              echo "All containers are running and healthy."
-              break
-            fi
-
-            if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
-              echo "::error::Timeout while waiting for all containers to become ready"
-              docker compose "${COMPOSE_ARGS[@]}" ps || true
-              docker compose "${COMPOSE_ARGS[@]}" logs --tail 120 || true
-              exit 1
-            fi
-
-            sleep "$INTERVAL"
-            ELAPSED=$((ELAPSED + INTERVAL))
-          done
+          docker compose -f docker-compose.yml up -d --build
 
       - name: Run Playwright e2e tests
         shell: bash
