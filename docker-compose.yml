@@ -33,11 +33,11 @@ services:
             CA_PEM_PATH: ca.pem
         command: sh -c "go mod download && go build -buildvcs=false -o backend main.go && ./backend"
         healthcheck:
-            test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:${PORT:-8080}/metrics > /dev/null || exit 1"]
+            test: ["CMD-SHELL", "wget -q -O- http://backend:${PORT:-8080}/metrics > /dev/null || exit 1"]
             interval: 10s
-            timeout: 5s
-            retries: 30
-            start_period: 180s
+            timeout: 10s
+            retries: 50
+            start_period: 60s
         depends_on:
             timescale: 
                 condition: service_healthy

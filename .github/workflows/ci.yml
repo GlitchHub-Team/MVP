@@ -40,12 +40,18 @@ jobs:
       TEST_CREDS_PATH: admin_test.creds
       CA_PEM_PATH: ca.pem
       PORT: ${{ vars.PORT }}
+      APP_URL: ${{ vars.APP_URL }}
       MAIL_ADAPTER: ${{ vars.MAIL_ADAPTER }}
       TOKEN_LENGTH: ${{ vars.TOKEN_LENGTH }}
       TOKEN_DURATION: ${{ vars.TOKEN_DURATION }}
       BCRYPT_COST: ${{ vars.BCRYPT_COST }}
       AUTH_TOKEN_DURATION: ${{ vars.AUTH_TOKEN_DURATION }}
       AUTH_TOKEN_SECRET: ${{ secrets.AUTH_TOKEN_SECRET }}
+      SMTP_HOST: ${{ vars.SMTP_HOST }}
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_USER: ${{ secrets.SMTP_USER }}
+      SMTP_PASS: ${{ secrets.SMTP_PASS }}
+      SMTP_FROM: ${{ secrets.SMTP_FROM }}
       GF_SECURITY_ADMIN_USER: ${{ secrets.GF_SECURITY_ADMIN_USER }}
       GF_SECURITY_ADMIN_PASSWORD: ${{ secrets.GF_SECURITY_ADMIN_PASSWORD }}
       GF_USERS_ALLOW_SIGN_UP: ${{ vars.GF_USERS_ALLOW_SIGN_UP }}
@@ -102,17 +108,17 @@ jobs:
         run: |
           set -euo pipefail
 
-          COMPOSE_FILE="docker-compose.yml"
-          TIMEOUT=500
+          COMPOSE_ARGS=(-f docker-compose.yml)
+          TIMEOUT=300
           INTERVAL=5
           ELAPSED=0
-          SERVICES="$(docker compose -f "$COMPOSE_FILE" config --services)"
+          SERVICES="$(docker compose "${COMPOSE_ARGS[@]}" config --services)"
 
           while true; do
             ALL_READY=true
 
             for SERVICE in $SERVICES; do
-              CONTAINER_ID="$(docker compose -f "$COMPOSE_FILE" ps -q "$SERVICE")"
+              CONTAINER_ID="$(docker compose "${COMPOSE_ARGS[@]}" ps -q "$SERVICE")"
 
               if [ -z "$CONTAINER_ID" ]; then
                 echo "[PENDING] $SERVICE has no container id yet"
@@ -147,8 +153,8 @@ jobs:
 
             if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
               echo "::error::Timeout while waiting for all containers to become ready"
-              docker compose -f "$COMPOSE_FILE" ps || true
-              docker compose -f "$COMPOSE_FILE" logs --tail 120 || true
+              docker compose "${COMPOSE_ARGS[@]}" ps || true
+              docker compose "${COMPOSE_ARGS[@]}" logs --tail 120 || true
               exit 1
             fi
 
