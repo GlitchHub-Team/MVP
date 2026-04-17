@@ -28,9 +28,34 @@ services:
         ports:
             - "${PORT:-8080}:${PORT:-8080}"
         environment:
-            DASHBOARD_CREDS_PATH: dashboard.creds
-            TEST_CREDS_PATH: admin_test.creds
-            CA_PEM_PATH: ca.pem
+            - DASHBOARD_CREDS_PATH=dashboard.creds
+            - TEST_CREDS_PATH=admin_test.creds
+            - CA_PEM_PATH=ca.pem
+            - PORT
+            - APP_URL
+            - MAIL_ADAPTER
+            - TOKEN_LENGTH
+            - TOKEN_DURATION
+            - BCRYPT_COST
+            - AUTH_TOKEN_DURATION
+            - AUTH_TOKEN_SECRET
+            - SMTP_HOST
+            - SMTP_PORT
+            - SMTP_USER
+            - SMTP_PASS
+            - SMTP_FROM
+            - NATS_HOST
+            - NATS_PORT
+            - POSTGRES_HOST
+            - POSTGRES_PORT
+            - POSTGRES_DB
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
+            - CLOUD_POSTGRES_HOST
+            - CLOUD_POSTGRES_PORT
+            - CLOUD_POSTGRES_DB
+            - CLOUD_POSTGRES_USER
+            - CLOUD_POSTGRES_PASSWORD
         command: sh -c "go mod download && go build -buildvcs=false -o backend main.go && ./backend"
         healthcheck:
             test: ["CMD-SHELL", "wget -q -O- http://localhost:${PORT:-8080}/metrics > /dev/null || exit 1"]
@@ -56,9 +81,11 @@ services:
             - path: ./Infrastructure/.env
               required: false
         environment:
-            TEST_CREDS_PATH: admin_test.creds
-            GATEWAY_BASE_CREDS_PATH: base.creds
-            CA_PEM_PATH: ca.pem
+            - TEST_CREDS_PATH=admin_test.creds
+            - GATEWAY_BASE_CREDS_PATH=base.creds
+            - CA_PEM_PATH=ca.pem
+            - NATS_HOST
+            - NATS_PORT
         command: sh -c "go mod download && cd cmd && go build -buildvcs=false -o gateway && ./gateway"
         depends_on:
             timescale:
@@ -76,9 +103,16 @@ services:
             - path: ./Infrastructure/.env
               required: false
         environment:
-            DATA_CONSUMER_CREDS_PATH: data_consumer.creds
-            DATA_CONSUMER_TEST_CREDS_PATH: admin_test.creds
-            DATA_CONSUMER_CA_PEM_PATH: ca.pem
+            - DATA_CONSUMER_CREDS_PATH=data_consumer.creds
+            - DATA_CONSUMER_TEST_CREDS_PATH=admin_test.creds
+            - DATA_CONSUMER_CA_PEM_PATH=ca.pem
+            - NATS_HOST
+            - NATS_PORT
+            - POSTGRES_HOST
+            - POSTGRES_PORT
+            - POSTGRES_DB
+            - POSTGRES_USER
+            - POSTGRES_PASSWORD
         command: sh -c "go mod download && cd cmd && go build -buildvcs=false -o dataconsumer && ./dataconsumer"
         depends_on:
             timescale:
