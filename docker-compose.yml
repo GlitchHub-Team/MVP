@@ -36,7 +36,7 @@ services:
             test: ["CMD-SHELL", "wget -q -O- http://localhost:${PORT:-8080}/metrics > /dev/null || exit 1"]
             interval: 5s
             timeout: 5s
-            retries: 50
+            retries: 500
             start_period: 60s
         depends_on:
             timescale: 
