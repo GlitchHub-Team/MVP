@@ -141,7 +141,6 @@ jobs:
         run: |
           set -euo pipefail
           docker compose -f docker-compose.yml down -v --remove-orphans
-          sudo chown -R $USER:$USER .
       
 
       
