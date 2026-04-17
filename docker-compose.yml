@@ -35,9 +35,9 @@ services:
         healthcheck:
             test: ["CMD-SHELL", "wget -q -O- http://127.0.0.1:${PORT:-8080}/metrics > /dev/null || exit 1"]
             interval: 10s
-            timeout: 240s
-            retries: 12
-            start_period: 25s
+            timeout: 5s
+            retries: 30
+            start_period: 180s
         depends_on:
             timescale: 
                 condition: service_healthy
