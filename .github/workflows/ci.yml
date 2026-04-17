@@ -101,7 +101,29 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.yml up -d --build
+          REQUIRED_VARS=(
+            NATS_HOST NATS_PORT
+            POSTGRES_HOST POSTGRES_PORT POSTGRES_DB POSTGRES_USER POSTGRES_PASSWORD
+            CLOUD_POSTGRES_HOST CLOUD_POSTGRES_PORT CLOUD_POSTGRES_DB CLOUD_POSTGRES_USER CLOUD_POSTGRES_PASSWORD
+            PORT APP_URL MAIL_ADAPTER
+            TOKEN_LENGTH TOKEN_DURATION BCRYPT_COST AUTH_TOKEN_DURATION AUTH_TOKEN_SECRET
+            SMTP_HOST SMTP_PORT SMTP_USER SMTP_PASS SMTP_FROM
+          )
+
+          MISSING_VARS=()
+          for VAR_NAME in "${REQUIRED_VARS[@]}"; do
+            if [ -z "${!VAR_NAME:-}" ]; then
+              MISSING_VARS+=("$VAR_NAME")
+            fi
+          done
+
+          if [ "${#MISSING_VARS[@]}" -gt 0 ]; then
+            echo "::error::Missing required CI variables: ${MISSING_VARS[*]}"
+            exit 1
+          fi
+
+          docker compose -f docker-compose.yml config > /dev/null
+          docker compose -f docker-compose.yml up -d --build --scale e2e-tests=0
 
       - name: Verify all containers are ready
         shell: bash
@@ -166,7 +188,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          docker compose -f docker-compose.yml exec -T \
+          docker compose -f docker-compose.yml run --rm --no-deps --build \
             -e APP_URL=http://frontend \
             e2e-tests \
             pytest -q tests
