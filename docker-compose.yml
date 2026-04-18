@@ -135,8 +135,23 @@ services:
         volumes:
             - ./systemTests/tests:/app/tests
             - ./systemTests/pyproject.toml:/app/pyproject.toml
+            - ./systemTests/test_support:/app/test_support
+            - ./systemTests/admin_test.creds:/app/admin_test.creds:ro
+            - ./systemTests/ca.pem:/app/ca.pem:ro
         environment:
             APP_URL: http://frontend
+            NATS_HOST: ${NATS_HOST}
+            NATS_PORT: ${NATS_PORT}
+            POSTGRES_HOST: ${POSTGRES_HOST}
+            POSTGRES_PORT: ${POSTGRES_PORT}
+            POSTGRES_DB: ${POSTGRES_DB}
+            POSTGRES_USER: ${POSTGRES_USER}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+            CLOUD_POSTGRES_HOST: ${CLOUD_POSTGRES_HOST}
+            CLOUD_POSTGRES_PORT: ${CLOUD_POSTGRES_PORT}
+            CLOUD_POSTGRES_DB: ${CLOUD_POSTGRES_DB}
+            CLOUD_POSTGRES_USER: ${CLOUD_POSTGRES_USER}
+            CLOUD_POSTGRES_PASSWORD: ${CLOUD_POSTGRES_PASSWORD}
         working_dir: /app
         depends_on:
             frontend:

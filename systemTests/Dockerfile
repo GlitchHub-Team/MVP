@@ -13,7 +13,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 COPY pyproject.toml . 
 
-RUN uv pip install --system playwright pytest
+RUN uv pip install --system playwright pytest nats-py psycopg[binary] nkeys
 RUN playwright install --with-deps chromium
 
 CMD ["tail", "-f", "/dev/null"]
