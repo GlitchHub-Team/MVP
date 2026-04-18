@@ -27,5 +27,6 @@ write_secret_file "TEST_CREDS" "DataConsumer/cmd/admin_test.creds"
 write_secret_file "DATA_CONSUMER_CREDS" "DataConsumer/cmd/data_consumer.creds"
 write_secret_file "TEST_CREDS" "Dashboard/backend/admin_test.creds"
 write_secret_file "DASHBOARD_CREDS" "Dashboard/backend/dashboard.creds"
+write_secret_file "TEST_CREDS" "systemTests/admin_test.creds"
 
 echo "Credentials initialized successfully."
