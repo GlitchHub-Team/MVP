@@ -1,10 +1,10 @@
-import os
-
 from playwright.sync_api import expect, sync_playwright
+
+from test_support.api import require_env
 
 
 def test_login_page_shows_expected_content() -> None:
-    base_url = os.getenv("APP_URL")
+    base_url = require_env("APP_URL")
 
     with sync_playwright() as playwright:
         browser = playwright.chromium.launch(headless=True)

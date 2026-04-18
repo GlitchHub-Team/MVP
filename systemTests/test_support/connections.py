@@ -3,10 +3,21 @@ import os
 import ssl
 from contextlib import contextmanager
 from pathlib import Path
-from typing import AsyncIterator, Iterator
+from typing import Any, Iterator
 
-import psycopg
-from nats.aio.client import Client as NATS
+try:
+    import psycopg
+except ModuleNotFoundError:  # pragma: no cover - depends on environment setup
+    psycopg = None  # type: ignore[assignment]
+
+PsycopgConnection = Any
+if psycopg is not None:
+    PsycopgConnection = psycopg.Connection  # type: ignore[attr-defined]
+
+try:
+    from nats.aio.client import Client as NATS
+except ModuleNotFoundError:  # pragma: no cover - depends on environment setup
+    NATS = Any  # type: ignore[misc,assignment]
 
 
 def _require_env(name: str) -> str:
@@ -14,6 +25,20 @@ def _require_env(name: str) -> str:
     if not value:
         raise RuntimeError(f"Missing required environment variable: {name}")
     return value
+
+
+def _require_psycopg() -> None:
+    if psycopg is None:
+        raise RuntimeError(
+            "Missing Python dependency: psycopg. Install system test dependencies first."
+        )
+
+
+def _require_nats_client() -> None:
+    if NATS is Any:
+        raise RuntimeError(
+            "Missing Python dependency: nats-py. Install system test dependencies first."
+        )
 
 
 def _resolve_file(path_value: str) -> str:
@@ -45,6 +70,7 @@ async def connect_nats(
     ca_path: str = "ca.pem",
     timeout_seconds: float = 5.0,
 ) -> NATS:
+    _require_nats_client()
     resolved_creds = _resolve_file(creds_path)
     resolved_ca = _resolve_file(ca_path)
 
@@ -62,7 +88,8 @@ async def connect_nats(
 
 
 @contextmanager
-def sensor_db_connection() -> Iterator[psycopg.Connection]:
+def sensor_db_connection() -> Iterator[PsycopgConnection]:
+    _require_psycopg()
     connection = psycopg.connect(
         host=_require_env("POSTGRES_HOST"),
         port=int(_require_env("POSTGRES_PORT")),
@@ -78,7 +105,8 @@ def sensor_db_connection() -> Iterator[psycopg.Connection]:
 
 
 @contextmanager
-def cloud_db_connection() -> Iterator[psycopg.Connection]:
+def cloud_db_connection() -> Iterator[PsycopgConnection]:
+    _require_psycopg()
     connection = psycopg.connect(
         host=_require_env("CLOUD_POSTGRES_HOST"),
         port=int(_require_env("CLOUD_POSTGRES_PORT")),
